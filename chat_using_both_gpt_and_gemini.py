@@ -56,7 +56,7 @@ system_prompt = """
         1. Answer concise
         2. Answer the asking question in a way humans answer
 """
-selection_prompt = "You are an expert ai assistant whose job to find the most appropriate human like answer between two responses. "
+selection_prompt = "You are an expert ai assistant whose job to find the most appropriate human like answer between two responses. first give the response of the selected option then from the next line explain why was it better?"
 
 query = input("> ")
 
