@@ -17,10 +17,17 @@ def get_weather(city : str) :
         return {"Weather in {city} is {res.text}"}
     return "31 degree"
 
+def add(x ,y) : 
+    return x + y
+
 available_tools = {
     get_weather : {
         "fn" : get_weather,
         "desc" : "Takes city as input and find the current weather of the city"
+    },
+    add : {
+        "fn" : add,
+        "desc" : "Add the values of 2 given numbers and return that"
     }
 }
 system_prompt = """
@@ -36,6 +43,7 @@ system_prompt = """
         
     Available Tools : 
         - get_weather : Takes a city as input and return the weather of the provided city
+        - add : Takes 2 values and return the addition for both
     
     
     output json format :
@@ -61,35 +69,35 @@ system_prompt = """
 messages = [
     {"role" : "system", "content" : system_prompt}
 ]
-query = input("> ");
 
-messages.append({"role" : "user" , "content" : query})
-
-
-while True :
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages= messages,
-        response_format={"type" : "json_object"},
-    )
-    
-    parsed_response = json.loads(response.choices[0].message.content)
-    messages.append({"role" : "assistant" , "content" : json.dumps(parsed_response)})
-    
-    if parsed_response.get("step") == "plan" : 
-        print(f"🧠 : {parsed_response.get("content")}")
-        continue
-    
-    
-    # Agr step action h to function ko call krna chahiye
-    if parsed_response.get("step") == "action" : 
-        tool_name = parsed_response.get("function")
-        tool_input = parsed_response.get("input")
-        if available_tools.get(tool_name , False) != False :
-            output = available_tools[tool_name].get("fn")(tool_input)
-            messages.append({"role" : "assistant", "content" : json.dumps({"step":"observe", "output": output})})
-    
-    if parsed_response.get("step") == "output" : 
-        print(f"🤖 : {parsed_response.get("content")}")
-        break;
+#  user calling also in loop
+while True : 
+    query = input("> ");
+    messages.append({"role" : "user" , "content" : query})
+    while True :
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages= messages,
+            response_format={"type" : "json_object"},
+        )
         
+        parsed_response = json.loads(response.choices[0].message.content)
+        messages.append({"role" : "assistant" , "content" : json.dumps(parsed_response)})
+        
+        if parsed_response.get("step") == "plan" : 
+            print(f"🧠 : {parsed_response.get("content")}")
+            continue
+        
+        
+        # Agr step action h to function ko call krna chahiye
+        if parsed_response.get("step") == "action" : 
+            tool_name = parsed_response.get("function")
+            tool_input = parsed_response.get("input")
+            if available_tools.get(tool_name , False) != False :
+                output = available_tools[tool_name].get("fn")(tool_input)
+                messages.append({"role" : "assistant", "content" : json.dumps({"step":"observe", "output": output})})
+        
+        if parsed_response.get("step") == "output" : 
+            print(f"🤖 : {parsed_response.get("content")}")
+            break;
+            
