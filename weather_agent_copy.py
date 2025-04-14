@@ -10,19 +10,21 @@ client = OpenAI(
     api_key=gpt_key
 )
 
-def get_weather(city : str) : 
-    url = f"https://wttr.in/{city}?format=%C+%t"
+def get_weather(city: str) :
+    url = f"https://wttr/{city}?format=%C+%t"
     res = requests.get(url)
-    if res.status_code(200) : 
-        return {"Weather in {city} is {res.text}"}
-    return "31 degree"
+    
+    if res.status_code(200):
+        return res.text
+    return "unable to fetch the record"
 
-available_tools = {
+available_tools =  {
     get_weather : {
-        "fn" : get_weather,
-        "desc" : "Takes city as input and find the current weather of the city"
-    }
+        "fn" : "get_weather",
+        "desc" : "A tool function that takes city and return its temperature and weather"
+    },
 }
+
 system_prompt = """
     You are an helpfull ai assistant who is specialized in resolving user query.
     You work on start, plan, action, observe mode.
@@ -55,41 +57,38 @@ system_prompt = """
         Output : {{"step" : "output" , "content" : "The weather of new delhi seems to be 12 Degree celcius"}}
 """
 
-
-
-
 messages = [
-    {"role" : "system", "content" : system_prompt}
+    {"role" : "system" , "content" : system_prompt}
 ]
-query = input("> ");
 
-messages.append({"role" : "user" , "content" : query})
+user_query = input("> ")
+messages.append({"role" : "user" , "content" : user_query})
 
 
-while True :
+while True : 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages= messages,
+        messages=messages,
         response_format={"type" : "json_object"},
     )
     
-    parsed_response = json.loads(response.choices[0].message.content)
-    messages.append({"role" : "assistant" , "content" : json.dumps(parsed_response)})
+    parsed_res = json.loads(response.choices[0].message.content)
     
-    if parsed_response.get("step") == "plan" : 
-        print(f"🧠 : {parsed_response.get("content")}")
+    messages.append({"role" : "system" , "content" : json.dumps(parsed_res)})
+    
+    if parsed_res.get("step") == "plan" : 
+        print(f"🧠 : {parsed_res.get("content")}")
         continue
     
-    
-    # Agr step action h to function ko call krna chahiye
-    if parsed_response.get("step") == "action" : 
-        tool_name = parsed_response.get("function")
-        tool_input = parsed_response.get("input")
-        if available_tools.get(tool_name , False) != False :
+    if parsed_res.get("step") == "action" :
+        tool_name = parsed_res.get("function")
+        tool_input = parsed_res.get("input")
+        
+        if available_tools.get(tool_name, False) != False : 
             output = available_tools[tool_name].get("fn")(tool_input)
-            messages.append({"role" : "assistant", "content" : json.dumps({"step":"observe", "output": output})})
-    
-    if parsed_response.get("step") == "output" : 
-        print(f"🤖 : {parsed_response.get("content")}")
-        break;
+            messages.append({"role" : "assistant" , "content" : json.dumps({"step" : "observe" , "content" : output})})
+            
+    if parsed_res.get("step") == "output" :
+        print(f"🤖 : {parsed_res.get("content")}")
+        break
         
