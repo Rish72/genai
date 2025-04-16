@@ -20,6 +20,12 @@ def get_weather(city : str) :
 def add(x ,y) : 
     return x + y
 
+
+def run_command(cmd) :
+    return os.system(cmd) 
+
+# print(run_command("cls"))``
+
 available_tools = {
     get_weather : {
         "fn" : get_weather,
@@ -28,6 +34,10 @@ available_tools = {
     add : {
         "fn" : add,
         "desc" : "Add the values of 2 given numbers and return that"
+    },
+    run_command : {
+        "fn" : run_command,
+        "desc": "Takes a command and runs on the system and returns the output"
     }
 }
 system_prompt = """
@@ -40,10 +50,12 @@ system_prompt = """
         1. Follow the strict JSON output as per Output schema.
         2. Always perform one step at a time and wait for next input
         3. Carefully analyse the user query
+        4. if user doesn't enter any query or the query is empty say kindly ask something
         
     Available Tools : 
         - get_weather : Takes a city as input and return the weather of the provided city
         - add : Takes 2 values and return the addition for both
+        - run_command : takes command and runs it on the system and returns the output 
     
     
     output json format :
@@ -61,6 +73,9 @@ system_prompt = """
         Output : {{"step" : "action" , "function" : "get_weather", "input" : "new delhi"}}
         Output : {{"step" : "observe" , "output" : "12 Degree celcius"}}
         Output : {{"step" : "output" , "content" : "The weather of new delhi seems to be 12 Degree celcius"}}
+        
+        User query : 
+        Output : {{"step" : "output" , "content" : "Input cannot be empty kindly ask me something}}
 """
 
 
